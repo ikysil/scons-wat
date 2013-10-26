@@ -72,29 +72,36 @@ def generate(env, **kw):
 	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINNT')
 	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINW')
 	
-	#Set DOS-specific information
-	env['MEMMODEL'] = 'c'
+	#Set tool-specific information
 	env['USE386'] = False
+	env['WATSTR'] = _watstr
+	env['MEMMODEL16'] = 'c'
+	env['MEMMODEL32'] = 'f'
 	
-	#Then set up the compiler tools themselves.
-	env['CC'] = 'wcc'
+	#Deprecated- do not use directly.
+	env['MEMMODEL'] = "${USE386==True and MEMMODEL32 or MEMMODEL16}"
+	
+	#C/C++ Compilers, Preprocessor, and General Command Line Decorators.
+	env['CC'] = 'wcc${USE386==True and 386}'
+	env['CXX'] = 'wpp${USE386==True and 386}'
 	#env['CCFLAGS'] = '-0 -c -m' + env['MEMMODEL'] + ' -onatx -ol -oh -oi -s -ecc -ze -zq -zu'
 	env['CCFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	env['CCCOM'] = '$CC -fo=$TARGET $CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
 	env['CPPDEFPREFIX'] = '-d'
 	env['INCPREFIX'] = '-i='
-	env['AR'] = 'wlib'
+	
+	#Assembler
 	env['AS'] = 'wasm'
 	env['ASFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	
-	#MASM has it's own macro language
+	#MASM/WASM has it's own macro language
 	env['ASCOM'] = '$AS -fo=$TARGET $ASFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
 	env['ASPPCOM']   = '$CC -fo=$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
 
 	env['LINK'] = 'wlink'
 	env['LINKPREFIX'] = 'file '
 	env['LINKSUFFIX'] = ''
-	env['WATSTR'] = _watstr
+
 	env['_LINKSOURCES'] = '$(${_concat(LINKPREFIX, SOURCES, LINKSUFFIX, __env__, WATSTR)}$)'
 	env['LINKCOM'] = "$LINK name '$TARGET' $LINKFLAGS $_LIBDIRFLAGS $_LIBFLAGS $_LINKSOURCES"
 
@@ -104,40 +111,17 @@ def generate(env, **kw):
 	env['LIBLINKPREFIX'] = 'library '
 	env['LIBLINKSUFFIX'] = ''
 
+	#Librarian
+	env['AR'] = 'wlib'
 	
+	#Resource Compiler
 	env['RC'] = 'wrc'
 	env['RCFLAGS'] = SCons.Util.CLVar('-q -r')
         env['RCSUFFIXES']=['.rc','.rc2']
         env['RCCOM'] = '$RC $_CPPDEFFLAGS $_CPPINCFLAGS $RCFLAGS -fo=$TARGET $SOURCES'
 	
-	#Depends on if using 386 or not- 8088 not likely to be using DLLs
 	env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 	
-	#A newer old configuration :P
-	#env['ASPPCOM']   = '$CC -fo=$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
-	#$(LIB) $(LIBFLAGS) $(LIBNAME) +$(OBJS)
-	#env['LINK'] = 'wcl'
-	#env['LINKFLAGS'] = SCons.Util.CLVar('-zq')
-	#env['LIBDIRPREFIX'] = '-"libpath '
-	#env['LIBDIRSUFFIX'] = '"'
-	#env['LIBLINKPREFIX'] = '-"library '
-	#env['LIBLINKSUFFIX'] = '"'
-	#  ${TEMPFILE("$LINK $LINKFLAGS /OUT:$TARGET.windows $_LIBDIRFLAGS $_LIBFLAGS $_PDB $SOURCES.windows")}
-	#env['LINKCOM'] = '$LINK -fe=$TARGET $LINKFLAGS $_LIBDIRFLAGS $_LIBFLAGS $SOURCES'
-	
-	
-	#Old configuration
-	#env['CC'] = 'wcc'
-	#env['CCFLAGS'] = '-za -os -bt=dos'
-	#env['CCCOM'] = '$CC -fo=$TARGET $CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
-	#env['INCPREFIX'] = '-i='
-	#env['AR'] = 'wlib'
-	#env['LINK'] = 'wlink'
-	#env['LINKFLAGS'] = 'system dos'
-	#env['LIBDIRPREFIX'] = 'libpath '
-	#env['LIBLINKPREFIX'] = 'library '
-	#  ${TEMPFILE("$LINK $LINKFLAGS /OUT:$TARGET.windows $_LIBDIRFLAGS $_LIBFLAGS $_PDB $SOURCES.windows")}
-	#env['LINKCOM'] = '$LINK $LINKFLAGS $_LIBDIRFLAGS $_LIBFLAGS file{$SOURCES} name $TARGET'
 	
 def exists(env):
 	return check_for_watcom()

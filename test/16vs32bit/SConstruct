@@ -1,0 +1,7 @@
+env16 = Environment(tools = ['default', 'watcom'])
+env32 = Environment(tools = ['default', 'watcom'], USE386=True, toolpath = ['../../'])
+#env32['USE386']=True
+hello16_obj = env16.Object('hello16', 'hello.c')
+hello32_obj = env32.Object('hello32', 'hello.c')
+hello16_exe = env16.Program(hello16_obj)
+hello32_exe = env32.Program(hello32_obj)

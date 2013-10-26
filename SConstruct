@@ -1,3 +1,5 @@
+#Imported from: https://bitbucket.org/dirkbaechle/scons_rest/src
+
 import os
 env = Environment()
 #Add option to install to individual projects
