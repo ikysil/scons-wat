@@ -43,23 +43,11 @@ import SCons.Util
 
 #http://four.pairlist.net/pipermail/scons-users/2013-August/001639.html
 #This is required to bypass certain limitations of SCons __concat function.
-def _watstr(x):
+def _watstr_linksrc(x):
     res = []
     for f in x:
-        res.append(str(f))
+    	    res.append(str(f))
     return tuple(res)
-   
-#Watcom Compilers come in 2 flavors- one for 8088 targets, and one for 386 targets.
-#The 386-compilers have '386' appended to them... i.e. wpp vs wpp386
-class string386:
-	def __init__(self, Use386 = False):
-		self.use386 = Use386
-		
-	def __str__():
-		if self.use386:
-			return '386'
-		else:
-			return ''
 
 
 def generate(env, **kw):
@@ -68,13 +56,15 @@ def generate(env, **kw):
 	env['ENV']['INCLUDE'] = os.environ['INCLUDE']
 	env['ENV']['EDPATH'] = os.environ['EDPATH']
 	env['ENV']['WIPFC'] = os.environ['WIPFC']
-	env['ENV']['WHTMLHELP'] = os.environ['WHTMLHELP']
-	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINNT')
-	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINW')
+	#env['ENV']['WHTMLHELP'] = os.environ['WHTMLHELP']
+	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINNT') #Windows NT
+	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINW') #Windows 9x
+	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/binl') #Linux
+	#OS/2 eventually
 	
 	#Set tool-specific information
 	env['USE386'] = False
-	env['WATSTR'] = _watstr
+	env['WATSTR_LINK'] = _watstr_linksrc
 	env['MEMMODEL16'] = 'c'
 	env['MEMMODEL32'] = 'f'
 	
@@ -82,8 +72,10 @@ def generate(env, **kw):
 	env['MEMMODEL'] = "${USE386==True and MEMMODEL32 or MEMMODEL16}"
 	
 	#C/C++ Compilers, Preprocessor, and General Command Line Decorators.
-	env['CC'] = 'wcc${USE386==True and 386}'
-	env['CXX'] = 'wpp${USE386==True and 386}'
+	#Watcom Compilers come in 2 flavors- one for 8088 targets, and one for 386 targets.
+	#The 386-compilers have '386' appended to them... i.e. wpp vs wpp386
+	env['CC'] = "wcc${USE386==True and '386' or ''}"
+	env['CXX'] = "wpp${USE386==True and '386' or ''}"
 	#env['CCFLAGS'] = '-0 -c -m' + env['MEMMODEL'] + ' -onatx -ol -oh -oi -s -ecc -ze -zq -zu'
 	env['CCFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	env['CCCOM'] = '$CC -fo=$TARGET $CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
@@ -102,7 +94,9 @@ def generate(env, **kw):
 	env['LINKPREFIX'] = 'file '
 	env['LINKSUFFIX'] = ''
 
-	env['_LINKSOURCES'] = '$(${_concat(LINKPREFIX, SOURCES, LINKSUFFIX, __env__, WATSTR)}$)'
+	env['_LINKSOURCES'] = '$(${_concat(LINKPREFIX, ' \
+		'SOURCES, ' \
+		'LINKSUFFIX, __env__, WATSTR_LINK)}$)'
 	env['LINKCOM'] = "$LINK name '$TARGET' $LINKFLAGS $_LIBDIRFLAGS $_LIBFLAGS $_LINKSOURCES"
 
 	env['LINKFLAGS'] = SCons.Util.CLVar('option quiet')
