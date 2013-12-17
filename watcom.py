@@ -80,7 +80,7 @@ def generate(env, **kw):
 	env['CCFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	env['CXXFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	env['CCCOM'] = '$CC -fo=$TARGET $CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
-	env['CXXCOM'] = '$CC -fo=$TARGET $CFLAGS $CXXFLAGS $_CXXCOMCOM $SOURCES'
+	env['CXXCOM'] = '$CXX -fo=$TARGET $CFLAGS $CXXFLAGS $_CXXCOMCOM $SOURCES'
 	env['CPPDEFPREFIX'] = '-d'
 	env['INCPREFIX'] = '-i='
 	

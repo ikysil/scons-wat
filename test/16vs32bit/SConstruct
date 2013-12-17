@@ -1,10 +1,22 @@
-env16dos = Environment(tools = ['default', 'watcom'], toolpath = ['../../'], LINKFLAGS='system dos')
-env32win = Environment(tools = ['default', 'watcom'], USE386=True, toolpath = ['../../'], LINKFLAGS='system nt')
-env32linux = Environment(tools = ['default', 'watcom'], USE386=True, toolpath = ['../../'], LINKFLAGS='system linux')
-#env32['USE386']=True
-hello16dos_obj = env16dos.Object('hello16dos', 'hello.c')
-hello32win_obj = env32win.Object('hello32win', 'hello.c')
-hello32linux_obj = env32win.Object('hello32linux', 'hello.c')
-hello16dos_exe = env16dos.Program(hello16dos_obj)
-hello32win_exe = env32win.Program(hello32win_obj)
-hello32linux_exe = env32linux.Program(hello32linux_obj)
+if ARGUMENTS.get('TEST_DOS', True):
+	env16dos = Environment(tools = ['default', 'watcom'], toolpath = ['../../'], CFLAGS='-bt=dos', LINKFLAGS='system dos')
+	hello16dos_obj = env16dos.Object('hello16dos', 'hello.c')
+	hello16dos_exe = env16dos.Program(hello16dos_obj)
+	hello_cpp16dos_obj = env16dos.Object('hello_cpp16dos', 'hello_cpp.cpp')
+	hello_cpp16dos_exe = env16dos.Program(hello_cpp16dos_obj)
+	
+if ARGUMENTS.get('TEST_NT', True):
+	env32win = Environment(tools = ['default', 'watcom'], USE386=True, toolpath = ['../../'], CFLAGS='-bt=nt', LINKFLAGS='system nt')
+	hello32win_obj = env32win.Object('hello32win', 'hello.c')    
+	hello32win_exe = env32win.Program(hello32win_obj)
+	hello_cpp32win_obj = env32win.Object('hello_cpp32win', 'hello_cpp.cpp')
+	hello_cpp32win_exe = env32win.Program(hello_cpp32win_obj)
+
+
+if ARGUMENTS.get('TEST_LINUX', False):
+	env32linux = Environment(tools = ['default', 'watcom'], USE386=True, toolpath = ['../../'], CFLAGS='-bt=linux', LINKFLAGS='system linux')
+	hello32linux_obj = env32linux.Object('hello32linux', 'hello.c')
+	hello32linux_exe = env32linux.Program(hello32linux_obj)
+	hello_cpp32linux_obj = env32linux.Object('hello_cpp32linux', 'hello_cpp.cpp')
+	hello_cpp32linux_exe = env32linux.Program(hello_cpp32linux_obj)
+	
