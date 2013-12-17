@@ -78,7 +78,9 @@ def generate(env, **kw):
 	env['CXX'] = "wpp${USE386==True and '386' or ''}"
 	#env['CCFLAGS'] = '-0 -c -m' + env['MEMMODEL'] + ' -onatx -ol -oh -oi -s -ecc -ze -zq -zu'
 	env['CCFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
+	env['CXXFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	env['CCCOM'] = '$CC -fo=$TARGET $CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
+	env['CXXCOM'] = '$CC -fo=$TARGET $CFLAGS $CXXFLAGS $_CXXCOMCOM $SOURCES'
 	env['CPPDEFPREFIX'] = '-d'
 	env['INCPREFIX'] = '-i='
 	
