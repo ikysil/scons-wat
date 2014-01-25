@@ -82,7 +82,7 @@ def generate(env, **kw):
 		shared_obj.add_action(suffix, SCons.Defaults.ShCXXAction)
 		static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
 		shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
-	for suffix in ['.asm', '.ASM':
+	for suffix in ['.asm', '.ASM']:
 		static_obj.add_action(suffix, SCons.Defaults.ASAction)
 		shared_obj.add_action(suffix, SCons.Defaults.ASAction)
 		static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
