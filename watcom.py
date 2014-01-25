@@ -70,6 +70,7 @@ def generate(env, **kw):
 	
 	#Future Improvement- since WATCOM can run on multiple platforms- change
 	#supported suffixes et. al depending on env['HOST_OS'].
+	#For now, assume Windows host (Capital .C is C file, not C++)
 	#Also, look at SCons.Util.case_sensitive_suffixes('.c', '.C')
 	for suffix in ['.c', '.C']:
 		static_obj.add_action(suffix, SCons.Defaults.CAction)
@@ -81,6 +82,12 @@ def generate(env, **kw):
 		shared_obj.add_action(suffix, SCons.Defaults.ShCXXAction)
 		static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
 		shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
+	for suffix in ['.asm', '.ASM':
+		static_obj.add_action(suffix, SCons.Defaults.ASAction)
+		shared_obj.add_action(suffix, SCons.Defaults.ASAction)
+		static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
+		shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)	
+		
 	#WATCOM supports a number of actions that are implemented in SCons	
 	SCons.Tool.createStaticLibBuilder(env)
 	SCons.Tool.createSharedLibBuilder(env)
