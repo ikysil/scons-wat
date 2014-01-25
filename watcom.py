@@ -1,4 +1,4 @@
-# Copyright (c) 2013 The SCons Foundation
+# Copyright (c) 2013-2014 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -43,6 +43,7 @@ import SCons.Util
 
 #http://four.pairlist.net/pipermail/scons-users/2013-August/001639.html
 #This is required to bypass certain limitations of SCons __concat function.
+#Required for the linker, and static/dynamic archivers.
 def _watstr_linksrc(x):
     res = []
     for f in x:
@@ -60,11 +61,35 @@ def generate(env, **kw):
 	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINNT') #Windows NT
 	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/BINW') #Windows 9x
 	env.AppendENVPath('PATH', env['ENV']['WATCOM'] + '/binl') #Linux
-	#OS/2 eventually
+	#OS/2 eventually- I mainly can't add this because I have no OS/2 system
+	#with which to test.
+	
+	#Generate default builders- this is generic for now until I can otherwise
+	#improve.
+	static_obj, shared_obj = SCons.Tool.createObjBuilders(env)
+	
+	#Future Improvement- since WATCOM can run on multiple platforms- change
+	#supported suffixes et. al depending on env['HOST_OS'].
+	#Also, look at SCons.Util.case_sensitive_suffixes('.c', '.C')
+	for suffix in ['.c', '.C']:
+		static_obj.add_action(suffix, SCons.Defaults.CAction)
+		shared_obj.add_action(suffix, SCons.Defaults.ShCAction)
+		static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
+		shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
+	for suffix in ['.cpp', '.CPP']:
+		static_obj.add_action(suffix, SCons.Defaults.CXXAction)
+		shared_obj.add_action(suffix, SCons.Defaults.ShCXXAction)
+		static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
+		shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
+	#WATCOM supports a number of actions that are implemented in SCons	
+	SCons.Tool.createStaticLibBuilder(env)
+	SCons.Tool.createSharedLibBuilder(env)
+	SCons.Tool.createProgBuilder(env)	
 	
 	#Set tool-specific information
 	env['USE386'] = False
 	env['WATSTR_LINK'] = _watstr_linksrc
+	env['WATSTR_AR'] = _watstr_linksrc
 	env['MEMMODEL16'] = 'c'
 	env['MEMMODEL32'] = 'f'
 	
@@ -78,24 +103,33 @@ def generate(env, **kw):
 	env['CXX'] = "wpp${USE386==True and '386' or ''}"
 	#env['CCFLAGS'] = '-0 -c -m' + env['MEMMODEL'] + ' -onatx -ol -oh -oi -s -ecc -ze -zq -zu'
 	env['CCFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
+	env['CFLAGS'] = SCons.Util.CLVar('')
 	env['CXXFLAGS'] = SCons.Util.CLVar('') #Suppress /TP
+	
+	#Precompiled header support will be added later
+	env['_CCCOMCOM']  = '$CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $CCPCHFLAGS $CCPDBFLAGS'
 	env['CCCOM'] = '$CC -fo=$TARGET $CFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
 	env['CXXCOM'] = '$CXX -fo=$TARGET $CXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCES'
 	env['CPPDEFPREFIX'] = '-d'
+	env['CPPDEFSUFFIX'] = ''
 	env['INCPREFIX'] = '-i='
+	env['INCSUFFIX'] = ''
 	
 	#Assembler
 	env['AS'] = 'wasm'
 	env['ASFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
 	
-	#MASM/WASM has it's own macro language
+	#MASM/WASM has it's own macro language, so the C preprocessor doesn't do
+	#much here. WATCOM DOES have a (broken) POSIX interface, howver.
 	env['ASCOM'] = '$AS -fo=$TARGET $ASFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
 	env['ASPPCOM']   = '$CC -fo=$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
 
+	#Linker- To fix: Resources require the "resource" directive, but all other
+	#SCons builders treat them are regular object files automatically handled
+	#by the linker.
 	env['LINK'] = 'wlink'
 	env['LINKPREFIX'] = 'file '
 	env['LINKSUFFIX'] = ''
-
 	env['_LINKSOURCES'] = '$(${_concat(LINKPREFIX, ' \
 		'SOURCES, ' \
 		'LINKSUFFIX, __env__, WATSTR_LINK)}$)'
@@ -109,6 +143,20 @@ def generate(env, **kw):
 
 	#Librarian
 	env['AR'] = 'wlib'
+	env['ARFLAGS'] = SCons.Util.CLVar('-q')
+	env['ARPREFIX'] = '+'
+	env['ARSUFFIX'] = ''
+	env['ARCOM'] = '$AR $ARFLAGS $TARGET $_ARSOURCES'
+	env['_ARSOURCES'] = '$(${_concat(ARPREFIX, ' \
+		'SOURCES, ' \
+		'ARSUFFIX, __env__, WATSTR_AR)}$)'
+	env['LIBPREFIX'] = ''
+	env['LIBSUFFIX'] = '.lib'
+	
+	#For UNIX targets... may require using TARGET_OS or WATTARGET_OS
+	#env['LIBPREFIX']   = 'lib'
+	#env['LIBSUFFIX']   = '.a'
+	
 	
 	#Resource Compiler
 	env['RC'] = 'wrc'
@@ -116,6 +164,7 @@ def generate(env, **kw):
         env['RCSUFFIXES']=['.rc','.rc2']
         env['RCCOM'] = '$RC $_CPPDEFFLAGS $_CPPINCFLAGS $RCFLAGS -fo=$TARGET $SOURCES'
 	
+	#Internal option used when the shared and static object compilers differ.
 	env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 	
 	

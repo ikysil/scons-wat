@@ -1,0 +1,14 @@
+#Variable for reuse
+lib_base_path = Dir('./static_test')
+
+#This also tests include and library paths
+lib_env = Environment(tools = ['watcom'], toolpath = ['../../'], USE386=True, CPPPATH=lib_base_path)
+		#CFLAGS='-bt=dos', CXXFLAGS='-bt=dos', \
+		#LINKFLAGS='option quiet system dos', \
+lib_env.Library(lib_base_path.File('static_test.c'))
+
+app_env = lib_env.Clone()
+app_env['LIBPATH'] = lib_base_path 
+app_env['LIBS'] ='static_test'
+app_env.Program('static_app.c')
+
