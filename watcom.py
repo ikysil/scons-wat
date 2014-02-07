@@ -99,6 +99,7 @@ def generate(env, **kw):
 	env['WATSTR_AR'] = _watstr_linksrc
 	env['MEMMODEL16'] = 'c'
 	env['MEMMODEL32'] = 'f'
+	env['USEWASM'] = True
 	
 	#Deprecated- do not use directly.
 	env['MEMMODEL'] = "${USE386==True and MEMMODEL32 or MEMMODEL16}"
@@ -122,14 +123,44 @@ def generate(env, **kw):
 	env['INCPREFIX'] = '-i='
 	env['INCSUFFIX'] = ''
 	
-	#Assembler
-	env['AS'] = 'wasm'
-	env['ASFLAGS'] = SCons.Util.CLVar('-zq -m${MEMMODEL}')
+	#Assembler- Does not automatically set 386 or 8088 mode.
+	#Check for jwasm- use that if it exists.
+	#First check WATCOM paths, then OS paths
+	jwasm_path=env.WhereIs('jwasm') or SCons.Util.WhereIs('jwasm')
+	if jwasm_path:
+		#This seems to be required, as opposed to SCons platform-independent
+		#dir functions to split filenames and paths... why?
+		dir = os.path.dirname(jwasm_path)
+		env.PrependENVPath('PATH', dir)
+		env['USEWASM'] = False
+		
+	env['AS']="${USEWASM==True and 'wasm' or 'jwasm'}"
+	env['ASFLAGS'] = SCons.Util.CLVar('-q -m${MEMMODEL}')
+	env['ASPPFLAGS'] = SCons.Util.CLVar('-q -m${MEMMODEL}') 	#-q and -Fo 
+	#appears to be undocumented aliases for -zq, or operate quietly, and 
+	#-Fo= and fo=, or File Output. These are compatible with jwasm.
+	
+	
+	#Possible future improvement? Make command lines compatible with chosen
+	#assembler. Check to see that appending flags still works however!
+	#Makes it so initally generated command lines won't mix syntaxes... doesn't
+	#prevent user from appending mixed incompatible command line options however!
+	#I simply feel a bit uncomfortable using the undocumented aliases.
+	#env['WASMFLAGS'] = '-zq -m${MEMMODEL}'
+	#env['WASMCOM']  = '$AS -fo=$TARGET $ASFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
+	#env['WASMPPCOM']  = '$CC -fo=$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
+	#env['JWASMFLAGS'] = '-q -m${MEMMODEL}'
+	#env['JWASMCOM']  = '$AS -Fo$TARGET $ASFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
+	#env['JWASMPPCOM']   = '$CC -Fo$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
+	#env['ASFLAGS']="${USEWASM==True and WASMFLAGS or JWASMFLAGS}"
+	#env['ASPPFLAGS']="${USEWASM==True and WASMPPFLAGS or JWASMPPFLAGS}"
+	#env['ASCOM']="${USEWASM==True and WASMCOM or JWASMCOM}"
+	#env['ASPPCOM']="${USEWASM==True and WASMPPCOM or JWASMPPCOM}"
 	
 	#MASM/WASM has it's own macro language, so the C preprocessor doesn't do
 	#much here. WATCOM DOES have a (broken) POSIX interface, howver.
-	env['ASCOM'] = '$AS -fo=$TARGET $ASFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
-	env['ASPPCOM']   = '$CC -fo=$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
+	env['ASCOM'] = '$AS -Fo$TARGET $ASFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
+	env['ASPPCOM']   = '$CC -Fo$TARGET $ASPPFLAGS $CPPFLAGS $_CPPDEFFLAGS $_CPPINCFLAGS $SOURCES'
 
 	#Linker- To fix: Resources require the "resource" directive, but all other
 	#SCons builders treat them are regular object files automatically handled

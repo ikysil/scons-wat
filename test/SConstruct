@@ -1,2 +1,3 @@
 target_test = SConscript(['16_vs_32bit/SConstruct'])
 static_test = SConscript(['static_lib/SConstruct'])
+jwasm_test = SConscript(['jwasm_switch/SConstruct'])

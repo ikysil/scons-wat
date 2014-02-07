@@ -1,0 +1,11 @@
+auto_env = Environment(tools = ['watcom'], toolpath = ['../../'])
+auto_env['MEMMODEL16'] = 's'
+wasm_env = auto_env.Clone(USEWASM=True)
+jwasm_env = wasm_env.Clone(USEWASM=False)
+
+env_names = ['wasm', 'jwasm', 'auto']
+test_envs = [wasm_env, jwasm_env, auto_env]
+
+for env, name in zip(test_envs, env_names):
+	env.Object('hello_' + name, 'hello.asm')
+	env.Program('hello_' + name)
