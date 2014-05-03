@@ -22,5 +22,7 @@ Non-x86 target support.
 POSIX compiler-driver support (current broken upstrem for NT/Linux(?)-systems).
 
 This repo can be found at the following places:
-code.google.com/p/scons-wat
+http://code.google.com/p/scons-wat (main)
 https://github.com/cr1901/scons-wat/
+
+A copy is kept on github because a number of my repositories provide the option (if not required) to compile using the Watcom C Compiler.
